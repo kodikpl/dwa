@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>IPTV Player</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <video id="video" playsinline webkit-playsinline></video>
+
+  <!-- ========== INFO BAR ========== -->
+  <div id="info-bar" class="info-bar">
+    <div class="ib-num" id="ib-num">001</div>
+    <div class="ib-logo" id="ib-logo"></div>
+    <div class="ib-meta">
+      <div class="ib-name" id="ib-name">Kanał</div>
+      <div class="ib-epg" id="ib-epg"></div>
+    </div>
+    <div class="ib-time" id="ib-time">20:45</div>
+  </div>
+
+  <!-- ========== NUMERIC OVERLAY ========== -->
+  <div id="num-overlay" class="num-overlay">
+    <div id="num-text"></div>
+  </div>
+
+  <!-- ========== PLAYER CONTROLS ========== -->
+  <div id="player-controls" class="player-controls">
+    <div class="pc-item" data-pc="play">ODTWARZAJ / PAUZA</div>
+    <div class="pc-item" data-pc="mute">WYCISZ</div>
+    <div class="pc-item" data-pc="voldown">GŁOŚNOŚĆ −</div>
+    <div class="pc-item" data-pc="volup">GŁOŚNOŚĆ +</div>
+    <div class="pc-item" data-pc="fullscreen">PEŁNY EKRAN</div>
+    <div class="pc-item" data-pc="fav">ULUBIONE</div>
+    <div class="pc-item" data-pc="list">LISTA KANAŁÓW</div>
+    <div class="pc-item" data-pc="next">NASTĘPNY</div>
+  </div>
+
+  <!-- ========== HOME (METRO) ========== -->
+  <div id="home" class="screen">
+    <header class="topbar">
+      <div class="topbar-logo">
+        <svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="#fff" stroke-width="2">
+          <rect x="2" y="8" width="28" height="20"/>
+          <path d="M10 2l6 6 6-6"/>
+        </svg>
+        <span>IPTV PLAYER</span>
+      </div>
+      <div class="topbar-clock" id="clock">20:45</div>
+    </header>
+    <div class="tiles" id="tiles"></div>
+    <div class="hint-bar">↑ ↓ ← → nawigacja &nbsp;•&nbsp; OK wybór &nbsp;•&nbsp; MENU menu &nbsp;•&nbsp; BACK powrót</div>
+  </div>
+
+  <!-- ========== CHANNEL LIST PANEL ========== -->
+  <div id="channel-panel" class="side-panel">
+    <div class="panel-header">
+      <span>LISTA KANAŁÓW</span>
+      <span class="panel-hint">OK wybór · ← / BACK zamknij</span>
+    </div>
+    <div class="panel-filter" id="panel-filter"></div>
+    <div class="channel-list" id="channel-list"></div>
+  </div>
+
+  <!-- ========== MENU PANEL ========== -->
+  <div id="menu-panel" class="side-panel menu-panel">
+    <div class="panel-header">
+      <span>MENU</span>
+      <span class="panel-hint">← / BACK zamknij</span>
+    </div>
+    <div class="menu-list" id="menu-list"></div>
+  </div>
+
+  <!-- ========== GENERIC PANEL (favorites/recent/categories/epg/info) ========== -->
+  <div id="generic-panel" class="side-panel">
+    <div class="panel-header">
+      <span id="generic-title">PANEL</span>
+      <span class="panel-hint">OK wybór · ← / BACK zamknij</span>
+    </div>
+    <div class="generic-list" id="generic-list"></div>
+  </div>
+
+  <!-- ========== SETTINGS PANEL ========== -->
+  <div id="settings-panel" class="full-panel">
+    <div class="panel-header">
+      <span>USTAWIENIA</span>
+      <span class="panel-hint">← → zmiana · OK przełącz · BACK zamknij</span>
+    </div>
+    <div class="settings-content" id="settings-content"></div>
+  </div>
+
+  <!-- ========== PLAYLIST PANEL ========== -->
+  <div id="playlist-panel" class="full-panel">
+    <div class="panel-header">
+      <span>USTAW PLAYLISTĘ M3U</span>
+      <span class="panel-hint">← → zakładki · OK wybór · BACK zamknij</span>
+    </div>
+    <div class="playlist-content">
+      <div class="tab-row" id="pl-tabs">
+        <div class="tab-btn" data-tab="url">URL</div>
+        <div class="tab-btn" data-tab="paste">URL WKLEJ</div>
+        <div class="tab-btn" data-tab="file">PLIK</div>
+      </div>
+      <div class="tab-body">
+        <div class="tab-pane" data-pane="url">
+          <div class="field-label">Adres URL playlisty M3U</div>
+          <input id="playlist-url" class="text-input" type="text" placeholder="https://example.com/playlist.m3u">
+          <div class="btn-row">
+            <button class="metro-btn" id="save-url">ZAPISZ ZMIANY</button>
+            <button class="metro-btn" id="load-url">WCZYTAJ</button>
+          </div>
+        </div>
+        <div class="tab-pane hidden" data-pane="paste">
+          <div class="field-label">Wklej bezpośrednią zawartość playlisty M3U</div>
+          <textarea id="playlist-paste" class="text-input" placeholder="#EXTM3U&#10;#EXTINF:-1 tvg-logo=&quot;...&quot; group-title=&quot;...&quot;,Nazwa&#10;http://..."></textarea>
+          <div class="btn-row">
+            <button class="metro-btn" id="save-paste">ZAPISZ ZMIANY</button>
+          </div>
+        </div>
+        <div class="tab-pane hidden" data-pane="file">
+          <div class="field-label">Wybierz lokalny plik playlisty (.m3u / .m3u8)</div>
+          <input id="playlist-file" type="file" accept=".m3u,.m3u8,text/plain">
+          <div class="btn-row">
+            <button class="metro-btn" id="save-file">WCZYTAJ PLIK</button>
+          </div>
+        </div>
+      </div>
+      <div class="pl-status" id="pl-status"></div>
+    </div>
+  </div>
+
+  <!-- ========== SEARCH PANEL ========== -->
+  <div id="search-panel" class="full-panel">
+    <div class="panel-header">
+      <span>SZUKAJ KANAŁU</span>
+      <span class="panel-hint">OK zatwierdź · BACK powrót</span>
+    </div>
+    <div class="search-wrap">
+      <div class="search-input" id="search-input"></div>
+      <div class="keyboard" id="keyboard"></div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+
+  <!-- ========== LOADING ========== -->
+  <div id="loading" class="overlay loading-overlay hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- ========== ERROR SCREEN ========== -->
+  <div id="error-screen" class="overlay error-overlay hidden">
+    <div class="error-track">
+      <div class="error-line" id="error-line">BRAK SYGNAŁU 404</div>
+    </div>
+    <div class="error-hint">OK następny kanał &nbsp;·&nbsp; BACK lista kanałów</div>
+  </div>
+
+  <!-- ========== SCREENSAVER ========== -->
+  <div id="screensaver" class="overlay screensaver hidden">
+    <div class="ss-title">IPTV PLAYER</div>
+    <div class="ss-track">
+      <div class="ss-code" id="ss-code">
+        SIGNAL 404&nbsp;&nbsp;&nbsp;&nbsp;STREAM 502&nbsp;&nbsp;&nbsp;&nbsp;NETWORK 408&nbsp;&nbsp;&nbsp;&nbsp;BUFFER 503&nbsp;&nbsp;&nbsp;&nbsp;TIMEOUT 408
+      </div>
+    </div>
+    <div class="ss-clock" id="ss-clock">20:45</div>
+  </div>
+
+</div>
+<script src="js/storage.js"></script>
+<script src="js/playlist.js"></script>
+<script src="js/player.js"></script>
+<script src="js/epg.js"></script>
+<script src="js/remote.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
